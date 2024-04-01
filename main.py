@@ -3,8 +3,6 @@ from bs4 import BeautifulSoup
 from basic_methods import BASE_URL, NUMBER_OF_PAGES, TOTAL_SEARCH_ITEMS, KEYWORD_INPUT
 
 
-
-
 for i in range(TOTAL_SEARCH_ITEMS):
     response = requests.get(BASE_URL.format(keyword= KEYWORD_INPUT, output=i))
     soup = BeautifulSoup(response.text, features="html.parser")
@@ -13,8 +11,6 @@ for i in range(TOTAL_SEARCH_ITEMS):
     author = soup.findAll('span', style='color:#333; font-weight: 700')
     body = soup.findAll('p', style="color: #777")
     link = soup.findAll('a', {'class':'fz-20 lh-22 fw-b'})
-    category = soup.findAll('a', {'class': 'article__primary-category__link gradient-text gradient-text--green-gradient'})
-    # cat = soup.findAll('div', {'class': 'article__primary-category'})
     total_result_in_website = [span.text for div in soup.findAll('div', {'class': 'compPagination'}) for span in div.findAll('span')]
         
     for re, de, auth, bo, l, t in zip(result,date,author,body,link, total_result_in_website):
