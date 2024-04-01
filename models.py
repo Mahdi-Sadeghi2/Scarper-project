@@ -4,38 +4,31 @@ from bs4 import BeautifulSoup
 
     
 class SearchByCategory:
-    def __init__(self,base_url,category,) -> None:
-        self.category = category
+    def __init__(self,base_url,pages,) -> None:
+        self.pages = pages
         self.base_url = base_url
 
     def search_loop(self):
-        response = requests.get(self.base_url.format(categories = self.category))
-        soup = BeautifulSoup(response.text, features="html.parser")
-        result = soup.findAll('a',{'class': 'post-block__title__link'})
-        summary = soup.findAll('div',{'class': 'post-block__content'})
-        category = self.category
-        if self.category == 'artificial-intelligence':
-            category = 'AI'
-        elif self.category == 'cryptocurrency':
-            category = 'Crypto'
-        elif self.category == 'Government-policy':
-            category = 'Government & Policy'
-        elif self.category == 'Biotech-health':
-            category = 'Biotech & Health'
-        else:
-            category
-        author = soup.findAll('span', {'class':'river-byline__authors'})
-        link = soup.findAll('a', {'class':'post-block__title__link'})
-        image = soup.findAll('img')
-        for re, s, a, l, i, in zip(result, summary,author,link,image):
-            print('title:',re.text.strip(),'\n')
-            print('image:',i['srcset'].split()[4],'\n')
-            print('summary:',s.text.strip()+'.','\n')
-            print('author:',a.text.strip(),'\n')
-            print('article link:',l['href'])
-            print('category:',category)
-            print('*' * 80)
-        print('Length:', len(result))
+        total_results = 0
+        for i in range(self.pages):
+            response = requests.get(self.base_url.format(pages = i))
+            data = response.json()
+            for d in data['body']:
+                print('Category:', d['primary_category']['name'],'\n')
+                print('Title:', d['title']['rendered'],'\n')
+                cleaned_data = BeautifulSoup(d['excerpt']['rendered'], "html.parser").text
+                print('Discription:', cleaned_data)
+                date = d['date']
+                full_datetime = date
+                date, time = full_datetime.split("T")
+                print("Published Date:", date,'\n')
+                print("Published Time:", time,'\n')
+                author_name = d['yoast_head_json']
+                print("Author Name:", author_name['author'])
+                page_results = len(data['body'])  
+                total_results += page_results
+                print('*' * 80)
+            print("Total results:", total_results)
         
 
 
