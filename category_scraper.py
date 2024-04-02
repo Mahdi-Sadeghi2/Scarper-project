@@ -1,6 +1,8 @@
 from basic_methods import DEFAULT_KEYWORD_INPUT, DEFAULT_NUMBER_OF_PAGES
 import requests
 from bs4 import BeautifulSoup
+from datasaver.models import ArticlCategory, ArticleBasedSearch
+from django.utils.dateparse import parse_date, parse_time
 
 
 class SearchByCategory:
@@ -14,20 +16,22 @@ class SearchByCategory:
             response = requests.get(self.base_url.format(pages=i))
             data = response.json()
             for d in data['body']:
-                print('Category:', d['primary_category']['name'], '\n')
-                print('Title:', d['title']['rendered'], '\n')
-                cleaned_data = BeautifulSoup(
-                    d['excerpt']['rendered'], "html.parser").text
-                print('Discription:', cleaned_data)
-                date = d['date']
-                full_datetime = date
-                date, time = full_datetime.split("T")
-                print("Published Date:", date, '\n')
-                print("Published Time:", time, '\n')
-                author_name = d['yoast_head_json']
-                print("Author Name:", author_name['author'])
-                print('Image:',d['yoast_head_json']['og_image'][0]['url'])
-                print("Article link:",d['link'])
+                articel = ArticlCategory.objects.create(
+
+                    category=d['primary_category']['name'],
+                    title=d['title']['rendered'],
+                    discription=BeautifulSoup(
+                        d['excerpt']['rendered'], "html.parser").text,
+                    Published_Date=parse_date(d['date']),
+                    published_time=parse_time(d['date']),
+                    author=d['yoast_head_json']['author'],
+                    image_url=d['yoast_head_json']['og_image'][0]['url'],
+                    articl_link=d['link']
+
+
+
+                )
+                articel.save()
                 page_results = len(data['body'])
                 total_results += int(page_results / 10)
                 print('*' * 80)
@@ -42,7 +46,7 @@ class SearchByUserInput:
         self.total_search = total_search
 
     def search_engine(self):
-        for i in range(1,int(self.total_search * 10)+1):
+        for i in range(1, int(self.total_search * 10)+1):
             response = requests.get(self.url.format(
                 keyword=self.keyword, output=i))
             soup = BeautifulSoup(response.text, features="html.parser")
@@ -55,12 +59,18 @@ class SearchByUserInput:
                 'div', {'class': 'compPagination'}) for span in div.findAll('span')]
 
             for re, de, auth, bo, l, t in zip(result, date, author, body, link, total_result_in_website):
-                print('article title:', re.text)
-                print('date posted:', de.text)
-                print('author:', auth.text)
-                print('summary:', bo.text)
-                print('link:', l['href'])
-                print('total results in website:', t)
+                article = ArticleBasedSearch.objects.create(
+                    title=re.text,
+                    date_posted=de.text,
+                    authors=auth.text,
+                    summary=bo.text,
+                    link=l['href'],
+                    keywords=self.keyword,
+                    websit_total_results=t
+                )
+                article.save()
+                print('Saved articl', article)
+                # print('total results in website:', t)
                 print('total pages number:', self.pages)
                 print('total number of the result:', self.total_search)
                 total_results = ''.join(filter(str.isdigit, t))
